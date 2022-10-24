@@ -167,6 +167,118 @@
     }
   }
 
+  // ast 可以描述 dom css js (ast 描述代码)
+  // 虚拟dom 只能描述 dom 层面不一样
+
+  function compileToFunctions(template) {
+    // 1. 需要将 html 转换成ast 抽象语法树
+
+    // 前端要掌握的数据结构 (树)
+    var ast = parseHTML(template); //
+    console.log(ast);
+    // 2. 需要将ast树重新生成 html
+  }
+
+  var ncname = "[a-zA-Z ][\\-\\.0-9_a-zA-Z]*"; // 标签名
+  var qnameCapture = "((?:".concat(ncname, "\\:)?").concat(ncname, ")"); // ?: 匹配但不捕获
+  var startTagOpen = new RegExp("^<".concat(qnameCapture)); // // 标签开头的正则 捕获的内容是标签名
+  var endTag = new RegExp("^</".concat(qnameCapture, "[^>]*>")); // 匹配标签结尾的 </div>
+  var startTagClose = /^\s*(\/?)>/; // 匹配标签结束的
+  var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^’]*)'+|([^\s"'=<>`]+)))?/; // 匹配属性的
+
+  // 生成 ast
+  function parseHTML(html) {
+    var root;
+    // // 解析开始标签
+    function start(tagName, attrs) {
+      console.log(tagName, attrs, "解析开始标签");
+      var element = createASTElement(tagName, attrs);
+      if (!root) {
+        root = element;
+      }
+    }
+
+    // 结束标签
+    function end(endTag) {
+      console.log(endTag, "结束标签");
+    }
+
+    // //文本
+    function chars(text) {
+      console.log(text, "文本");
+    }
+    function createASTElement(tagName, attrs) {
+      return {
+        tag: tagName,
+        type: 1,
+        children: [],
+        attrs: attrs,
+        parent: null
+      };
+    }
+
+    // html 存在一直执行
+    while (html) {
+      var textEnd = html.indexOf("<");
+      if (textEnd == 0) {
+        // 肯定是标签 处理开始
+        var startTagMatch = parseStartTag();
+        if (startTagMatch) {
+          start(startTagMatch.tagName, startTagMatch.attrs);
+          continue;
+        }
+        // 处理结束
+        var endTagMatch = html.match(endTag);
+        if (endTagMatch) {
+          advance(endTagMatch[0].length);
+          end(endTagMatch[1]);
+          continue;
+        }
+      }
+      var text = void 0;
+      // 处理文本
+      if (textEnd > 0) {
+        text = html.substring(0, textEnd);
+      }
+      if (text) {
+        advance(text.length);
+        chars(text);
+      }
+      break;
+    }
+    // 截取字符串
+    function advance(n) {
+      html = html.substring(n);
+    }
+    function parseStartTag() {
+      var start = html.match(startTagOpen);
+      if (start) {
+        var match = {
+          tagName: start[1],
+          // 标签名
+          attrs: []
+        };
+        advance(start[0].length);
+        console.log(html);
+        var _end;
+        var attr;
+        while (!(_end = html.match(startTagClose)) && (attr = html.match(attribute))) {
+          match.attrs.push({
+            name: attr[1],
+            value: attr[3] || attr[4] || attr[5]
+          });
+          advance(attr[0].length); // 去掉属性
+        }
+
+        if (_end) {
+          advance(_end[0].length);
+          return match;
+        }
+      }
+    }
+    return root;
+  }
+
   function initMixin(Vue) {
     //入口 初始化方法
     Vue.prototype._init = function (options) {
@@ -175,6 +287,33 @@
       initSatte(vm); // 初始化状态
 
       // vue 响应数据的变化 讲将数据作一个初始化的劫持 （数据改变时改变视图）
+
+      // 默认 如果当前有el属性 就渲染模板
+      if (vm.$options.el) {
+        vm.$mount(vm.$options.el);
+      }
+    };
+    Vue.prototype.$mount = function (el) {
+      // 1 获取el dom
+      // 2 判断如果没有 render
+      // 3 没render 就 将 template 转为 render
+
+      // 挂载
+      var vm = this;
+      // 1 获取el dom
+      el = document.querySelector(el);
+
+      // 2 判断如果没有 render
+      if (!vm.$options.render) {
+        // 3 没render 就 将 template 转为 render
+        var template = vm.$options.template;
+        if (!template && el) {
+          template = el.outerHTML;
+        }
+        // 将模板转换为 render 函数 就是 ast 虚拟dom树 最总渲染时用的都是render方法
+        var render = compileToFunctions(template);
+        vm.$options.render = render;
+      }
     };
   }
 
