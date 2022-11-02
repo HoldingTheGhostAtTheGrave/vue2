@@ -1,6 +1,6 @@
 vue 2.js 底层学习.....
 
-##### 虚拟 dom 和 ast 树的区别
+### 虚拟 dom 和 ast 树的区别
 
 - 不同
 
@@ -13,13 +13,13 @@ vue 2.js 底层学习.....
 - 相同
   1. js 进行描述
 
-##### 1. 响应式原理
+### 1. 响应式原理
 
 1. observer 方法中 对 数据进行判断 劫持
 2. defineReactive 方法递归 使用 defineProperty 对 数据进行响应式拦截
 3. 添加 ** ob ** 属性 判断 当前数据是否为响应式数据
 
-##### 2. 编译过程
+### 2. 编译过程
 
 1. 初始化 数据
 2. 编译模板 执行 $mount
@@ -29,9 +29,9 @@ vue 2.js 底层学习.....
 5. 虚拟 dom 转为真实的 dom
 6. 替换 dom 内容
 
-##### 3. watcher 和 dep （收集依赖 更新）
+### 3. watcher 和 dep （收集依赖 更新）
 
-##### 代码 为 $ntextick 方法
+### 代码 为 $ntextick 方法
 
 - Dep.target 为当前更新的 Whatcher 实例
 
@@ -93,13 +93,13 @@ export function nextTick(callback) {
 1. 取属性值 是 会调用 get 方法 dep.depend 记录 这个渲染的 watcher （也可以理解为当前的 target ）
 2. 属性值更新时 调用 dep 的 notify 方法 执行 Watcher 渲染页面数据
 
-##### 数组 更新渲染 watcher
+### 数组 更新渲染 watcher
 
 1. 给 所有 对象类型 添加 一个 dep 属性 dep = new Dep();
 2. 获取 数组的 值时 记录 当前渲染 的 Whatcher ;
 3. 数组项改变 时 进入重写的 数组 方法 在 该方法里 触发 dep.notify() 方法 更新当前修改的数组 当前 更新 的 Watcher
 
-##### 生命周期
+### 生命周期
 
 1. vue 生命周期是 在不同的处理阶段 执行不同的方法
 
@@ -116,13 +116,13 @@ export function callHook (vm , hook) {
 }
 ```
 
-##### watch 方法
+#### watch 方法
 
 - new Watcher 吧 watcher 设置为 用户的 watcher
 - watch 的 key value 值为 watcher 的 callback 方法
 - 用户修改值是触发更新 value 函数 传入值
 
-##### diff 解析 / vdom/patch.js
+#### diff 解析 / vdom/patch.js
 
 - 拿到 老的 vnode 和 新的 vnode 进行比较
 
@@ -131,7 +131,7 @@ export function callHook (vm , hook) {
 3. updatePropertions 方法 处理新老属性的 对比 替换
 4. 判断 当前标签的 children
 
-###### diff 核心
+### diff 核心
 
 1. 双指针的 方式对比 （定义 old 开头指针 开始的索引项 和 && 结束指针 结束的索引项） （new 开头指针 开始的索引项 && 结束指针 结束的索引项）
 
@@ -224,7 +224,7 @@ else{
 ```
 
 
-##### computed
+### computed
 1. 循环 获取 conputed 里的 对象 属性值
 2. 创建 watcher 类 
 ```js
