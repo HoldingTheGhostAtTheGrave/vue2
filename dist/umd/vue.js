@@ -116,6 +116,46 @@
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
+  var id$1 = 0;
+  var Dep = /*#__PURE__*/function () {
+    function Dep() {
+      _classCallCheck(this, Dep);
+      this.subs = [];
+      this.id = id$1++;
+    }
+    _createClass(Dep, [{
+      key: "depend",
+      value: function depend() {
+        // this.subs.push(Dep.target);
+        Dep.target.addDep(this); // 让watcher 记住 dep 让dep 记住 watcher
+      }
+    }, {
+      key: "notify",
+      value: function notify() {
+        this.subs.forEach(function (watcher) {
+          watcher.update();
+        });
+      }
+    }, {
+      key: "addSub",
+      value: function addSub(watcher) {
+        this.subs.push(watcher);
+      }
+    }]);
+    return Dep;
+  }();
+  Dep.target = null;
+  var stack = [];
+  function pushTarget(watcher) {
+    Dep.target = watcher; //保留watcher
+    stack.push(watcher); // 有渲染watcher 还有 其它watcher
+  }
+
+  function popTarget() {
+    stack.pop();
+    Dep.target = stack[stack.length - 1]; // 删除watcher
+  }
+
   // 获取数组上的方法
   var arrayProto = Array.prototype;
 
@@ -264,43 +304,6 @@
       timerFunc();
       panding$1 = true;
     }
-  }
-
-  var id$1 = 0;
-  var Dep = /*#__PURE__*/function () {
-    function Dep() {
-      _classCallCheck(this, Dep);
-      this.subs = [];
-      this.id = id$1++;
-    }
-    _createClass(Dep, [{
-      key: "depend",
-      value: function depend() {
-        // this.subs.push(Dep.target);
-        Dep.target.addDep(this); // 让watcher 记住 dep 让dep 记住 watcher
-      }
-    }, {
-      key: "notify",
-      value: function notify() {
-        console.log(this.subs);
-        this.subs.forEach(function (watcher) {
-          watcher.update();
-        });
-      }
-    }, {
-      key: "addSub",
-      value: function addSub(watcher) {
-        this.subs.push(watcher);
-      }
-    }]);
-    return Dep;
-  }();
-  function pushTarget(watcher) {
-    Dep.target = watcher; //保留watcher
-  }
-
-  function popTarget() {
-    Dep.target = null; // 删除watcher
   }
 
   var Observer = /*#__PURE__*/function () {
@@ -641,7 +644,8 @@
       this.id = id++; //watcher 的唯一标识
       this.deps = []; //记录dep
       this.depsId = new Set();
-
+      this.lazy = options.lazy; // 如果watcher 的 lazy 存在 就是 计算属性
+      this.dirty = this.lazy;
       // getter 更新函数
       if (typeof exproOrFn == 'function') {
         this.getter = exproOrFn;
@@ -657,26 +661,32 @@
           return obj;
         };
       }
-      this.value = this.get();
+      this.value = !this.lazy ? this.get() : void 0;
     }
     _createClass(Watcher, [{
       key: "update",
       value: function update() {
         callHook(this.vm, 'beforeUpdate');
-        queueWatcher(this); // 批处理 ， 暂存 方法
+        // 判断是否是计算属性的 watcher 
+        if (this.lazy) {
+          this.dirty = true; // 页面重新渲染 可以获取到最新的值
+        } else {
+          queueWatcher(this); // 批处理 ， 暂存 方法
+        }
       }
     }, {
       key: "get",
       value: function get() {
         // watch 先获取值 触发拦截 target 已存在当前 target 
         pushTarget(this); // 当前实例
-        var result = this.getter(); //渲染页面 获取值
+        var result = this.getter.call(this.vm); //渲染页面 获取值
         popTarget();
         return result;
       }
     }, {
       key: "addDep",
       value: function addDep(dep) {
+        console.log(dep);
         var id = dep.id;
         if (!this.depsId.has(id)) {
           this.deps.push(dep);
@@ -693,6 +703,23 @@
         if (this.user) {
           this.callback.call(this.vm, newValue, oldValue);
         }
+      }
+    }, {
+      key: "depend",
+      value: function depend() {
+        // 通过watcher 找到所有的 的dep 让所有的 dep 记住这个渲染watcher
+        var index = this.deps.length;
+        console.log(this.deps);
+        while (index--) {
+          this.deps[index].depend();
+        }
+      }
+    }, {
+      key: "evaluate",
+      value: function evaluate() {
+        // 调用 computed 的 函数 获取返回值
+        this.value = this.get();
+        this.dirty = false;
       }
     }]);
     return Watcher;
@@ -730,7 +757,9 @@
     if (opts.data) {
       initData(vm);
     }
-    if (opts.computed) ;
+    if (opts.computed) {
+      initComputed(vm);
+    }
     if (opts.watch) {
       initWatch(vm);
     }
@@ -745,6 +774,54 @@
     for (var key in data) {
       proxy(vm, '_data', key);
     }
+  }
+
+  // 处理计算属性
+  function initComputed(vm) {
+    var computed = vm.$options.computed;
+    // 1. 需要有watcher 2.还需要通过defineProperty 3. dirty 控制执行
+    var watchers = vm._computedWatchers = {}; // 用来存放计算属性的 watcher 
+
+    for (var key in computed) {
+      var userDef = computed[key];
+      var getter = typeof userDef === 'function' ? userDef : userDef.get; // watcher 使用
+      watchers[key] = new Watcher(vm, getter, function () {}, {
+        lazy: true
+      }); // 计算属性的watcher
+      defineComputed(vm, key, userDef);
+    }
+  }
+  function defineComputed(target, key, userDef) {
+    var sharedPropertyDefinition = {
+      enumerable: true,
+      configurable: true,
+      get: function get() {},
+      set: function set() {}
+    };
+    if (typeof userDef === 'function') {
+      sharedPropertyDefinition.get = createComptedGetter(key);
+    } else {
+      sharedPropertyDefinition.get = createComptedGetter(key); //需要加缓存
+      sharedPropertyDefinition.set = userDef.set;
+    }
+    Object.defineProperty(target, key, sharedPropertyDefinition);
+  }
+  function createComptedGetter(key) {
+    // 此方法是包装的计算属性方法 每次获取值调用 判断要不要执行用户传递的方法
+    return function () {
+      // 执行
+      var watcher = this._computedWatchers[key]; //获取属性对应的 watcher
+      if (watcher) {
+        if (watcher.dirty) {
+          watcher.evaluate(); // 对当前的  watcher 进行求值
+        }
+
+        if (Dep.target) {
+          watcher.depend();
+        }
+        return watcher.value; // 默认返回 watcher 的value 的值
+      }
+    };
   }
 
   // 获取watch 里面的值 

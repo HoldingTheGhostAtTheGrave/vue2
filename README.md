@@ -223,4 +223,43 @@ else{
 }
 ```
 
+
+##### computed
+1. 循环 获取 conputed 里的 对象 属性值
+2. 创建 watcher 类 
+```js
+for (const key in computed) {
+     const userDef = computed[key];
+    const getter = typeof userDef === 'function' ? userDef : userDef.get; // watcher 使用
+    watchers[key] = new Watcher(vm , getter , () => {} , { lazy : true }); // 计算属性的watcher
+    defineComputed(vm , key , userDef);
+}
+```
+3. getter 为修改触发的 函数 值
+
+4. 使用 Object.defineProperty 侦听 对象的 key 值
+
+5. 包装 对象中的 方法
+```js
+function createComptedGetter (key){
+    // 此方法是包装的计算属性方法 每次获取值调用 判断要不要执行用户传递的方法
+    return function () {
+        // 执行
+        const watcher = this._computedWatchers[key]; //获取属性对应的 watcher
+        if(watcher){
+            // 用 dirty 控制 是否需要重新渲染
+            if(watcher.dirty){
+                watcher.evaluate(); // 对当前的  watcher 进行求值
+            }
+            // 添加 渲染 watcher
+            if(Dep.target){
+                watcher.depend();
+            }
+            return watcher.value; // 默认返回 watcher 的value 的值
+        }
+    }
+}
+
+```
+
 ###### vue 的更新策略 是以组件为单位的 给 每一个组件都添加 一个 watcher 属性变化 后 会重新 调用这个 watcher （渲染 watcher）

@@ -14,7 +14,8 @@ class Watcher  {
         this.id = id++; //watcher 的唯一标识
         this.deps = []; //记录dep
         this.depsId = new Set();
-
+        this.lazy = options.lazy; // 如果watcher 的 lazy 存在 就是 计算属性
+        this.dirty = this.lazy; 
         // getter 更新函数
         if(typeof exproOrFn == 'function'){
             this.getter = exproOrFn;
@@ -29,22 +30,28 @@ class Watcher  {
                 return obj;
             }
         }
-        this.value = this.get();
+        this.value = !this.lazy ? this.get() : void 0;
     }
     update(){
         callHook(this.vm, 'beforeUpdate');
-        queueWatcher(this); // 批处理 ， 暂存 方法
+        // 判断是否是计算属性的 watcher 
+        if(this.lazy){
+            this.dirty = true; // 页面重新渲染 可以获取到最新的值
+        }else{
+            queueWatcher(this); // 批处理 ， 暂存 方法
+        }
     }
 
     get(){
         // watch 先获取值 触发拦截 target 已存在当前 target 
         pushTarget(this); // 当前实例
-        let result = this.getter(); //渲染页面 获取值
+        let result = this.getter.call(this.vm); //渲染页面 获取值
         popTarget();
         return result;
     }
 
     addDep(dep){
+        console.log(dep);
         let id = dep.id;
         if(!this.depsId.has(id)){
             this.deps.push(dep);
@@ -60,6 +67,21 @@ class Watcher  {
         if(this.user){
             this.callback.call(this.vm , newValue , oldValue);
         }
+    }
+
+    depend(){
+        // 通过watcher 找到所有的 的dep 让所有的 dep 记住这个渲染watcher
+        let index = this.deps.length;
+        console.log(this.deps);
+        while(index --){
+            this.deps[index].depend();
+        }
+    }
+
+    evaluate(){
+        // 调用 computed 的 函数 获取返回值
+       this.value = this.get();
+       this.dirty = false;
     }
 }
 

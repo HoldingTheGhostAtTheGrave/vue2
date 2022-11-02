@@ -1,3 +1,4 @@
+import Dep from "./observer/dep";
 import { observer } from "./observer/index";
 import Watcher from "./observer/watcher";
 import { nextTick, proxy } from './utils';
@@ -40,8 +41,51 @@ function initMethods () {
     
 }
 
-function initComputed () {
-    
+// 处理计算属性
+function initComputed (vm) {
+    let computed = vm.$options.computed;
+    // 1. 需要有watcher 2.还需要通过defineProperty 3. dirty 控制执行
+    const watchers = vm._computedWatchers = {}; // 用来存放计算属性的 watcher 
+
+    for (const key in computed) {
+        const userDef = computed[key];
+        const getter = typeof userDef === 'function' ? userDef : userDef.get; // watcher 使用
+        watchers[key] = new Watcher(vm , getter , () => {} , { lazy : true }); // 计算属性的watcher
+        defineComputed(vm , key , userDef);
+    }
+}
+
+function defineComputed (target , key , userDef){
+    let sharedPropertyDefinition = {
+        enumerable:true,
+        configurable:true,
+        get:() => {},
+        set:() => {}
+    };
+    if(typeof userDef === 'function'){
+        sharedPropertyDefinition.get = createComptedGetter( key );
+    }else{
+        sharedPropertyDefinition.get = createComptedGetter( key ); //需要加缓存
+        sharedPropertyDefinition.set = userDef.set;
+    }
+    Object.defineProperty(target , key ,sharedPropertyDefinition );
+}
+
+function createComptedGetter (key){
+    // 此方法是包装的计算属性方法 每次获取值调用 判断要不要执行用户传递的方法
+    return function () {
+        // 执行
+        const watcher = this._computedWatchers[key]; //获取属性对应的 watcher
+        if(watcher){
+            if(watcher.dirty){
+                watcher.evaluate(); // 对当前的  watcher 进行求值
+            }
+            if(Dep.target){
+                watcher.depend();
+            }
+            return watcher.value; // 默认返回 watcher 的value 的值
+        }
+    }
 }
 
 // 获取watch 里面的值 
