@@ -21,6 +21,8 @@ methodsToPatch.forEach((method) => {
     // 新的方法
     arrayMethods[method] = function (...args) {
         // this 就是 observer里的value
+        const result = arrayProto[method].apply(this,args);
+        //
         let inserted;
         let ob = this.__ob__;
 
@@ -33,6 +35,7 @@ methodsToPatch.forEach((method) => {
         if(inserted){
             ob.observerArray(inserted);
         }
-        return arrayProto[method].apply(this,args);
+        ob.dep.notify(); // 通知数组依赖更新
+        return result;
     }
 })                                        

@@ -4,9 +4,15 @@ import { patch } from "./vdom/patch";
 export function lifecycleMixin (Vue) {
     Vue.prototype._update = function (vnode) {
         const vm =  this;
-
-        // 替换旧的元素
-        vm.$el = patch(vm.$el , vnode);
+        // 区分首次渲染还是更新
+        const prevVnode = vm._vnode;
+        if(!prevVnode){
+            vm.$el = patch(vm.$el , vnode);
+        }else{
+            // 替换旧的元素
+            vm.$el = patch(vm._vnode , vnode);
+        }
+        vm._vnode = vnode;
     }
 }
 
@@ -18,14 +24,13 @@ export function mountComponent (vm,el) {
 
     // 先调用render 方法 创建虚拟节点  在将虚拟节点 渲染到页面上
 
-
     let updateComponent = function () {
         vm._update(vm._render());
     }
 
     //初始化的时候 创建 watcher
     new Watcher(vm , updateComponent , () => {
-        // callHook(vm , 'beforeUpdate'); // 更新生命周期
+        callHook(vm , 'updated'); // 更新生命周期
     } , true );
 
     callHook(vm , 'mounted'); // 渲染后生命周期

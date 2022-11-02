@@ -84,3 +84,51 @@ export function mergeOptions (parent , child) {
     }
     return options;
 }
+
+// nextTick 方法系列
+
+let callbacks = [];
+let panding = false;
+let timerFunc ;
+
+function flushCallback(){
+    callbacks.forEach((cb) => cb()); // 依次执行 修改数据方法
+    // while(callbacks.length){    
+    //     let callback = callbacks.pop(0);
+    //     callback();
+    // }
+    panding = false; 
+}
+
+export function nextTick (callback){
+    callbacks.push(callback);
+    // vue3 的 nexTick 方法原理就是 Promise.resolve().then(); 没有处理兼容性问题
+    // Promise.resolve().then()
+
+    // 判断兼容性
+    if (Promise) {
+        timerFunc = () => {
+            Promise.resolve().then(flushCallback);
+        }
+    } else if (MutationObserver) { // MutationObserver  监控改变 异步更新
+        let observer = new MutationObserver(flushCallback);
+        let textNode = document.createTextNode(1);
+        observer.observe(textNode, { characterData: true });
+        timerFunc = () => {
+            textNode.textContent = 2;
+        }
+    } else if (setImmediate) {
+        timerFunc = () => {
+            setImmediate(flushCallback);
+        }
+    } else {
+        timerFunc = () => {
+            setTimeout(flushCallback);
+        }
+    }
+
+    if(!panding){
+        timerFunc();
+        panding = true;
+    }
+}

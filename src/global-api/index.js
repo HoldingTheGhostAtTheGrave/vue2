@@ -10,6 +10,4 @@ export function initGlobalApi (Vue){
         this.options = mergeOptions(this.options , mixin);
     }
 
-
-    console.log(Vue);
 }

@@ -1,12 +1,22 @@
- class Dep {
+
+let id = 0;
+class Dep {
     constructor () {
         this.subs = [];
+        this.id = id++;
     }
     depend(){
-        this.subs.push(Dep.target);
+        // this.subs.push(Dep.target);
+        Dep.target.addDep(this); // 让watcher 记住 dep 让dep 记住 watcher
     }
     notify(){
-        this.subs.forEach((watcher) => watcher.update());
+        console.log(this.subs);
+        this.subs.forEach((watcher) => {
+            watcher.update();
+        });
+    }
+    addSub(watcher){
+        this.subs.push(watcher);
     }
 }
 

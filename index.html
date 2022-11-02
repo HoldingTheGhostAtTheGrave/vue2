@@ -10,46 +10,48 @@
 
 <body>
     <div id="app" style="font-size: 20px;">
-        hello {{ c.name }} - {{ b[1] }} aaa
-        <span style="font-size: 20px;color: red;">world</span>
-        <p style="font-size: 20px;">sb
-            <span></span>
-        </p>
+        <h1>哈哈哈哈</h1>
+        hello  {{ b }}
     </div>
     <script src="./dist/umd/vue.js"> </script>
     <!-- <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script> -->
     <script>
         Vue.mixin( {beforeCreate(){
-                console.log('===========');
             }});
         let vm = new Vue({
             el: '#app',
             data() {
                 return {
                     a: 10,
-                    b: [{ i: 10 }, '0000'],
+                    b: [1],
                     c: {
                         name: '我是傻逼'
                     }
                 }
             },
+            watch:{
+                a(newValue , oldValue){
+                },
+
+                'c.name'(newValue , oldValue){
+                }
+            },
             beforeCreate(){
-                console.log(this.a);
             },
             created(){
-                console.log(this.a);
             },
             mounted(){
-                console.log(this.$el , '====');
             },
-            
+            updated(){
+            },
+            beforeUpdate(){
+            }
         });
+        setTimeout(() => {
+            vm.b.push(20000)
+        },3000)
 
         // vue 的更新策略 是以组件为单位的 给 每一个组件都添加 一个 watcher 属性变化 后 会重新 调用这个 watcher （渲染watcher） 
-
-        setTimeout(() => {
-            vm.c.name = 100000;
-        },2000)
 
         // 渲染原理 默认会找render方法 如果1没有render 方法 会查找temlapla 模板 如果没有 tel 会找 el 内容来渲染
 
