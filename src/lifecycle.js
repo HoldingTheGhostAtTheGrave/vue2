@@ -1,11 +1,12 @@
-import  Watcher  from "./observer/watcher";
-import { patch } from "./vdom/patch";
+import Watcher from './observer/watcher';
+import { patch } from './vdom/patch';
 
 export function lifecycleMixin (Vue) {
     Vue.prototype._update = function (vnode) {
         const vm =  this;
         // 区分首次渲染还是更新
         const prevVnode = vm._vnode;
+        console.log(vm.$el ,vnode);
         if(!prevVnode){
             vm.$el = patch(vm.$el , vnode);
         }else{

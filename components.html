@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <button @click="run">点击触发</button>
+        <textarea name="" v-model="content" id="" cols="30" rows="10"></textarea>
+        <div id="on"></div>
+    </div>
+    <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+    <script>
+         new Vue({
+            el:'#app',
+            data(){
+                return {
+                    msg:'上班',
+                    content:''
+                }
+            },
+            methods:{
+                getSource(type){
+                    let reg = new RegExp(`<${type}[^>]*>`);
+                    let content = this.content;
+                    let matches = content.match(reg);
+                    if(matches){
+                        let start = content.indexOf(matches[0]) + matches[0].length;
+                        let end = content.lastIndexOf(`</${type}`);
+                        return content.slice(start , end);
+                    }
+                },
+                run(){
+
+                    let content = this.content;
+
+                    let template = this.getSource('template');
+                    let script = this.getSource('script').replace(/export default/ , 'return');
+                    let style = this.getSource('style');
+                    let obj = new Function(script)();
+                    obj.template = template;
+
+                    let childComponents = Vue.extend(obj);  
+                    let styleEl = document.createElement('style');
+                    styleEl.innerHTML = style;
+                    document.body.appendChild(styleEl);
+
+                    new childComponents().$mount('#on')
+                }
+            }
+         })
+    </script>
+</body>
+</html>

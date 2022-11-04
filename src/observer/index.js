@@ -54,7 +54,6 @@ function defineReactive (data , key ,value) {
             if(newValue === value) return ;
             observer(newValue);  // 如果用户将值改为对象 继续监控
             value = newValue;
-            console.log(key , value , dep);
             dep.notify(); // 依赖更新
         }
     });

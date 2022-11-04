@@ -10,14 +10,40 @@
 
 <body>
     <div id="app" style="font-size: 20px;">
-       {{ nameTarget }}
+       {{ b }}
+       <my-button></my-button>
+       <my-button></my-button>
     </div>
     <script src="./dist/umd/vue.js"> </script>
     <!-- <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script> -->
     <script>
-        Vue.mixin( {beforeCreate(){
-            }});
+        Vue.component('my-button',{
+            data(){
+                return {
+                    da:'button222'
+                }
+            },
+            template:'<button>{{ da }}</button>',
+            beforeCreate(){
+                console.log(22,'beforeCreate');
+            },
+            created(){
+                console.log(22,'created');
+            },
+            beforeMount(){
+                console.log(222,'beforMounte');
+            },
+            mounted(){
+                console.log(22,'mounted');
+                setTimeout(() => {
+                    this.da = 200000
+                },3000)
+            },
+        });
         let vm = new Vue({
+            components:{
+                
+            },
             el: '#app',
             data() {
                 return {
@@ -32,35 +58,38 @@
                
             },
             beforeCreate(){
+                console.log(1111,'beforeCreate');
             },
             created(){
+                console.log(1111,'created');
+            },
+            beforeMount(){
+                console.log(1111,'beforMounte');
             },
             mounted(){
+                this.run('sb');
+                window.addEventListener('click',this.run);
             },
             updated(){
             },
             beforeUpdate(){
             },
+            methods:{
+                run(name){
+                    console.log(this );
+                }
+            },
             // 会根际依赖的数据重新执行 内部也使用了 defineProperty , 内部有一个变量控制内部执行
             // 是一个watcher 内部依赖的属性收集 这个whtcher
-            computed:{
-                nameTarget(){
-                    console.log('执行');
-                    return this.b;
-                }
-            }
+            computed:{}
         });
-        // setTimeout(() => {
-        //     vm.b.push(20000)
-        //     vm.$nextTick(() => {
-        //         // console.log(vm.nameTarget);
-        //     })
-        // },3000)
-        // console.log(vm.nameTarget);
         // vue 的更新策略 是以组件为单位的 给 每一个组件都添加 一个 watcher 属性变化 后 会重新 调用这个 watcher （渲染watcher） 
 
         // 渲染原理 默认会找render方法 如果1没有render 方法 会查找temlapla 模板 如果没有 tel 会找 el 内容来渲染
 
+        //    1. 渲染时 new watcher 初始化调用 传入 watcher 的渲染页面（getter）方法  
+        //    2. watcher调用内部get方法  吧this 添加 到 Dep.target 中  调用 getter 渲染页面 触发依赖的收集  Dep.target（更新渲染的watcher） 存在 存入dep.subs 数组中
+        
     </script>
 </body>
 

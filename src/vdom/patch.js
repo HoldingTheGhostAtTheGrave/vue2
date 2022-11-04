@@ -1,6 +1,10 @@
 
 // 将虚拟节点转换为真实节点
 export function patch (oldVnode , vnode) {
+    // 如果是自定义组件 就是 不存在
+    if(!oldVnode){
+        return createEle(vnode); // 组件中的vnode
+    }
     // 默认初始化时 是用虚拟节点 创建真实的节点
     if(oldVnode.nodeType == 1){ 
         let el = createEle(vnode);
@@ -159,12 +163,25 @@ function updateChildren (oldChildren , newChildren , parent){
 
 }
 
+
+function createComponent (vnode){
+    let i = vnode.data;
+    if( (i = i.hook) && (i = i.init)){ // i = init 方法
+        i(vnode);
+    }
+    if(vnode.componentInstance){
+        return true;
+    }
+}
+
 // 生成真实dom
-export function createEle (vnode ){
-    const {tag , data , children , text} = vnode;
+export function createEle (vnode){
+    const {tag , data , children = [] , text} = vnode;
     if( typeof tag === 'string'){
+        if(createComponent(vnode)){
+            return vnode.componentInstance.$el;
+        }
         vnode.el = document.createElement(tag);
-        
         // 处理样式
         updatePropertions(vnode);
 
@@ -173,7 +190,6 @@ export function createEle (vnode ){
         });
     } else {
         vnode.el = document.createTextNode(text);
-        
     }
     return vnode.el;
 }

@@ -37,8 +37,16 @@ function initData (vm) {
 function initProps () {
 
 }
-function initMethods () {
-    
+function initMethods (vm) {
+    let methods = vm.$options.methods;
+    for (const key in methods) {
+       vm[key] = typeof methods[key] !== 'function' ? function () {} : bind(methods[key],vm);
+    }
+}
+
+// window.addEventListener('resize', this.run); 会丢失this指向
+function bind(callback , vm){
+    return callback.bind(vm);
 }
 
 // 处理计算属性

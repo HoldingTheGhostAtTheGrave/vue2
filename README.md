@@ -31,14 +31,14 @@ vue 2.js 底层学习.....
 
 ### 3. watcher 和 dep （收集依赖 更新）
 
-### 代码 为 $ntextick 方法
+### 代码 为 $nextick 方法
 
 - Dep.target 为当前更新的 Whatcher 实例
 
 - 结合代码理解 ：watcher 在初始化的时候 创建 watcher (beforeCreate 后 ) 首 触发 get 方法 调用 当前更新 吧 render 方法转为虚拟 dom 再转为 真实 dom 渲染替换 dom
 
 1. 调用 get 方法 添加 Dep.target 为 watcher 实例
-2. 调用 传入的 callback 方法 触发 \_update 让 （render 转为虚拟 dom） （patch 方法转 真实 dom） 方法更新 dom 数据
+2. 调用 传入的 callback 方法 触发 _update 让 （render 转为虚拟 dom） （patch 方法转 真实 dom） 方法更新 dom 数据
 3. Object.defineProperty 对 （render）方法转 虚拟 dom 时 替换 {{ name }} 获取值时进行拦截 （Dep.target 为 watcher 实例 ）
 4. Object.defineProperty 获取值 Dep.target 存在 触发 dep.depend 方法 收集依赖 添加 到 dep 类的 subs 数组中
 5. Object.definePropert 更新值时 触发 dep.notify 方法 循环 subs 收集的依赖 触发 watcher.update 方法 更新 this.subs.forEach((watcher) => watcher.update());
@@ -238,7 +238,23 @@ for (const key in computed) {
 3. getter 为修改触发的 函数 值
 
 4. 使用 Object.defineProperty 侦听 对象的 key 值
-
+```js
+function defineComputed (target , key , userDef){
+    let sharedPropertyDefinition = {
+        enumerable:true,
+        configurable:true,
+        get:() => {},
+        set:() => {}
+    };
+    if(typeof userDef === 'function'){
+        sharedPropertyDefinition.get = createComptedGetter( key );
+    }else{
+        sharedPropertyDefinition.get = createComptedGetter( key ); //需要加缓存
+        sharedPropertyDefinition.set = userDef.set;
+    }
+    Object.defineProperty(target , key ,sharedPropertyDefinition );
+}
+```
 5. 包装 对象中的 方法
 ```js
 function createComptedGetter (key){

@@ -51,7 +51,6 @@ class Watcher  {
     }
 
     addDep(dep){
-        console.log(dep);
         let id = dep.id;
         if(!this.depsId.has(id)){
             this.deps.push(dep);
@@ -72,7 +71,6 @@ class Watcher  {
     depend(){
         // 通过watcher 找到所有的 的dep 让所有的 dep 记住这个渲染watcher
         let index = this.deps.length;
-        console.log(this.deps);
         while(index --){
             this.deps[index].depend();
         }

@@ -30,9 +30,17 @@ const LIFECYCLE_HOOKS = [
     'destroyed',
 ]
 
-let strats = {
+let strats = {}
 
-}
+strats.components = function(parentVal,  childVal){
+    const res = Object.create(parentVal); // res.__prop__ = parentVal；
+    if(childVal){
+        for (const key in childVal) {
+            res[key] = childVal[key];
+        }
+    }
+    return res;
+};
 
 function mergeHook (parentValue , childValue) {
     // 新的存在生命周期函数
@@ -78,7 +86,12 @@ export function mergeOptions (parent , child) {
         }else if(child[key] == null){
             options[key] = parent[key];
         }else {
-            options[key] = child[key];
+
+            if(child[key]){
+                options[key] = child[key];
+            }else{
+                options[key] = parent[key];
+            }
         }
 
     }
@@ -132,3 +145,24 @@ export function nextTick (callback){
         panding = true;
     }
 }
+
+// 判断标签是不是真实标签
+function makeMap (str) {
+    const map = Object.create(null);
+    const list = str.split(',');
+    for (let i = 0; i < list.length; i++) {
+        map[list[i]] = true
+    }
+    return (key) => {
+        return map[key];
+    }
+}
+
+export const isNonPhrasingTag = makeMap(
+    'address,article,aside,base,blockquote,body,caption,col,colgroup,dd,' +
+      'details,dialog,div,dl,dt,fieldset,figcaption,figure,footer,form,' +
+      'h1,h2,h3,h4,h5,h6,head,header,hgroup,hr,html,legend,li,menuitem,meta,' +
+      'optgroup,option,param,rp,rt,source,style,summary,tbody,td,tfoot,th,thead,' +
+      'title,tr,track,button'
+  )
+  
