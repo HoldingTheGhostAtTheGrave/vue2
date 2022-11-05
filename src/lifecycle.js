@@ -4,8 +4,7 @@ import { patch } from "./vdom/patch";
 export function lifecycleMixin (Vue) {
     Vue.prototype._update = function (vnode) {
         const vm =  this;
-
-        // 替换旧的元素
+        // 替换旧的 dom 元素 
         vm.$el = patch(vm.$el , vnode);
     }
 }

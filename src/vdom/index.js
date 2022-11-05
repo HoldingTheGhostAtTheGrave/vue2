@@ -1,4 +1,7 @@
 
+//render 方法生成虚拟dom
+
+
 export function renderMinin (Vue){
     // 虚拟节点 用1对象来描述dom
     Vue.prototype._v = function (text) {

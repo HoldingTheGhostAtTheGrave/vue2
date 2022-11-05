@@ -1,4 +1,6 @@
 
+// 虚拟dom生成 真实dom
+
 // 将虚拟节点转换为真实节点
 export function patch (oldVnode , vnode) {
 
