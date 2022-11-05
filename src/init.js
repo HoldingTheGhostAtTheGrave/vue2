@@ -1,6 +1,9 @@
-import { initSatte } from "./state";
-import { compileToFunctions } from "./compile/index";
-import { callHook, mountComponent } from "./lifecycle";
+import { compileToFunctions } from './compile/index';
+import {
+  callHook,
+  mountComponent,
+} from './lifecycle';
+import { initSatte } from './state';
 import { mergeOptions } from './utils';
 
 export function initMixin(Vue) {
@@ -44,6 +47,7 @@ export function initMixin(Vue) {
 			}
 			// 将模板转换为 render 函数 就是 ast 虚拟dom树 最总渲染时用的都是render方法
 			const render = compileToFunctions(template);
+			console.log(render);
 			vm.$options.render = render;
 		}
 

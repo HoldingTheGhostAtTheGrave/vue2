@@ -3,6 +3,8 @@
 import { generate } from "./generate";
 import { parseHTML } from "./parse";
 
+
+// 转为 render 函数
 export function compileToFunctions(template) {
 	// 1. 需要将 html 转换成ast 抽象语法树
 
@@ -10,7 +12,6 @@ export function compileToFunctions(template) {
 	let ast = parseHTML(template); //
 	// 2. 需要将ast树重新生成 html
 	let code = generate(ast);
-
 	// 将字符串变成函数 限制取值范围 通过 with 来进行取值 通过改变this 让这个函数内部获取到结果
 	let render = new Function(`with( this ){ return ${code} }`);
 

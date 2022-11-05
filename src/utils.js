@@ -30,9 +30,17 @@ const LIFECYCLE_HOOKS = [
     'destroyed',
 ]
 
-let strats = {
+let strats = {}
 
-}
+strats.components = function(parentVal,  childVal){
+    const res = Object.create(parentVal); // res.__prop__ = parentVal；
+    if(childVal){
+        for (const key in childVal) {
+            res[key] = childVal[key];
+        }
+    }
+    return res;
+};
 
 function mergeHook (parentValue , childValue) {
     // 新的存在生命周期函数
@@ -78,9 +86,83 @@ export function mergeOptions (parent , child) {
         }else if(child[key] == null){
             options[key] = parent[key];
         }else {
-            options[key] = child[key];
+
+            if(child[key]){
+                options[key] = child[key];
+            }else{
+                options[key] = parent[key];
+            }
         }
 
     }
     return options;
 }
+
+// nextTick 方法系列
+
+let callbacks = [];
+let panding = false;
+let timerFunc ;
+
+function flushCallback(){
+    callbacks.forEach((cb) => cb()); // 依次执行 修改数据方法
+    // while(callbacks.length){    
+    //     let callback = callbacks.pop(0);
+    //     callback();
+    // }
+    panding = false; 
+}
+
+export function nextTick (callback){
+    callbacks.push(callback);
+    // vue3 的 nexTick 方法原理就是 Promise.resolve().then(); 没有处理兼容性问题
+    // Promise.resolve().then()
+
+    // 判断兼容性
+    if (Promise) {
+        timerFunc = () => {
+            Promise.resolve().then(flushCallback);
+        }
+    } else if (MutationObserver) { // MutationObserver  监控改变 异步更新
+        let observer = new MutationObserver(flushCallback);
+        let textNode = document.createTextNode(1);
+        observer.observe(textNode, { characterData: true });
+        timerFunc = () => {
+            textNode.textContent = 2;
+        }
+    } else if (setImmediate) {
+        timerFunc = () => {
+            setImmediate(flushCallback);
+        }
+    } else {
+        timerFunc = () => {
+            setTimeout(flushCallback);
+        }
+    }
+
+    if(!panding){
+        timerFunc();
+        panding = true;
+    }
+}
+
+// 判断标签是不是真实标签
+function makeMap (str) {
+    const map = Object.create(null);
+    const list = str.split(',');
+    for (let i = 0; i < list.length; i++) {
+        map[list[i]] = true
+    }
+    return (key) => {
+        return map[key];
+    }
+}
+
+export const isNonPhrasingTag = makeMap(
+    'address,article,aside,base,blockquote,body,caption,col,colgroup,dd,' +
+      'details,dialog,div,dl,dt,fieldset,figcaption,figure,footer,form,' +
+      'h1,h2,h3,h4,h5,h6,head,header,hgroup,hr,html,legend,li,menuitem,meta,' +
+      'optgroup,option,param,rp,rt,source,style,summary,tbody,td,tfoot,th,thead,' +
+      'title,tr,track,button'
+  )
+  
